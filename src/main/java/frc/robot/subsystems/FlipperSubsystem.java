@@ -12,8 +12,6 @@ import frc.robot.Constants;
 
 public class FlipperSubsystem extends SubsystemBase {
     private final SparkMax flipperMotor;
-    // Init a new motor for flipper
-    // finish the methods?
     private double speed;
 
     public FlipperSubsystem() {
