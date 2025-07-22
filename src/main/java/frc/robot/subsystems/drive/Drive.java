@@ -31,12 +31,13 @@ public class Drive extends SubsystemBase {
   private final GyroIO gyroIO;
   private final GyroIOInputsAutoLogged gyroInputs = new GyroIOInputsAutoLogged();
 
-  private final DifferentialDriveKinematics kinematics =
-      new DifferentialDriveKinematics(trackWidth);
+  private final DifferentialDriveKinematics kinematics = new DifferentialDriveKinematics(trackWidth);
+  // PID Values for real and sim
   private final double kS = Constants.currentMode == Mode.SIM ? simKs : realKs;
   private final double kV = Constants.currentMode == Mode.SIM ? simKv : realKv;
-  private final DifferentialDrivePoseEstimator poseEstimator =
-      new DifferentialDrivePoseEstimator(kinematics, new Rotation2d(), 0.0, 0.0, new Pose2d());
+  // Pose Values for 3D field
+  private final DifferentialDrivePoseEstimator poseEstimator = new DifferentialDrivePoseEstimator(kinematics,
+      new Rotation2d(), 0.0, 0.0, new Pose2d());
   private final SysIdRoutine sysId;
   private Rotation2d rawGyroRotation = new Rotation2d();
   private double lastLeftPositionMeters = 0.0;
@@ -50,10 +51,9 @@ public class Drive extends SubsystemBase {
     AutoBuilder.configure(
         this::getPose,
         this::setPose,
-        () ->
-            kinematics.toChassisSpeeds(
-                new DifferentialDriveWheelSpeeds(
-                    getLeftVelocityMetersPerSec(), getRightVelocityMetersPerSec())),
+        () -> kinematics.toChassisSpeeds(
+            new DifferentialDriveWheelSpeeds(
+                getLeftVelocityMetersPerSec(), getRightVelocityMetersPerSec())),
         (ChassisSpeeds speeds) -> runClosedLoop(speeds),
         new PPLTVController(0.02, maxSpeedMetersPerSec),
         ppConfig,
@@ -71,15 +71,14 @@ public class Drive extends SubsystemBase {
         });
 
     // Configure SysId
-    sysId =
-        new SysIdRoutine(
-            new SysIdRoutine.Config(
-                null,
-                null,
-                null,
-                (state) -> Logger.recordOutput("Drive/SysIdState", state.toString())),
-            new SysIdRoutine.Mechanism(
-                (voltage) -> runOpenLoop(voltage.in(Volts), voltage.in(Volts)), null, this));
+    sysId = new SysIdRoutine(
+        new SysIdRoutine.Config(
+            null,
+            null,
+            null,
+            (state) -> Logger.recordOutput("Drive/SysIdState", state.toString())),
+        new SysIdRoutine.Mechanism(
+            (voltage) -> runOpenLoop(voltage.in(Volts), voltage.in(Volts)), null, this));
   }
 
   @Override
@@ -95,10 +94,9 @@ public class Drive extends SubsystemBase {
       rawGyroRotation = gyroInputs.yawPosition;
     } else {
       // Use the angle delta from the kinematics and module deltas
-      Twist2d twist =
-          kinematics.toTwist2d(
-              getLeftPositionMeters() - lastLeftPositionMeters,
-              getRightPositionMeters() - lastRightPositionMeters);
+      Twist2d twist = kinematics.toTwist2d(
+          getLeftPositionMeters() - lastLeftPositionMeters,
+          getRightPositionMeters() - lastRightPositionMeters);
       rawGyroRotation = rawGyroRotation.plus(new Rotation2d(twist.dtheta));
       lastLeftPositionMeters = getLeftPositionMeters();
       lastRightPositionMeters = getRightPositionMeters();
@@ -167,7 +165,7 @@ public class Drive extends SubsystemBase {
    * Adds a vision measurement to the pose estimator.
    *
    * @param visionPose The pose of the robot as measured by the vision camera.
-   * @param timestamp The timestamp of the vision measurement in seconds.
+   * @param timestamp  The timestamp of the vision measurement in seconds.
    */
   public void addVisionMeasurement(Pose2d visionPose, double timestamp) {
     poseEstimator.addVisionMeasurement(visionPose, timestamp);
