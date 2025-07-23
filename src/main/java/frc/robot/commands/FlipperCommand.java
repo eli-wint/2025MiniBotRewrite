@@ -1,5 +1,6 @@
 package frc.robot.commands;
 
+import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 
 import edu.wpi.first.wpilibj2.command.Command;
@@ -7,11 +8,13 @@ import frc.robot.subsystems.FlipperSubsystem;
 
 public class FlipperCommand extends Command {
     private final FlipperSubsystem flipperSubsystem;
-    private final DoubleSupplier leftJoystick;
+    private final BooleanSupplier leftBumper;
+    private final BooleanSupplier rightBumper;
 
-    public FlipperCommand(FlipperSubsystem flipperSubsystem, DoubleSupplier leftJoystick) {
+    public FlipperCommand(FlipperSubsystem flipperSubsystem, BooleanSupplier leftBumper, BooleanSupplier rightBumper) {
         this.flipperSubsystem = flipperSubsystem;
-        this.leftJoystick = leftJoystick;
+        this.leftBumper = leftBumper;
+        this.rightBumper = rightBumper;
         addRequirements(flipperSubsystem);
     }
 
@@ -22,14 +25,15 @@ public class FlipperCommand extends Command {
 
     @Override
     public void execute() {
-        double flipperSpeed = -leftJoystick.getAsDouble() * .8; 
-        if (flipperSpeed < 0) flipperSpeed *= .2;
-
-        if (Math.abs(flipperSpeed) < 0.05) { // dead-zone to prevent controller drift
-            flipperSpeed = 0;
-        }
-
-        flipperSubsystem.setSpeed(flipperSpeed);
+        if (leftBumper != null && leftBumper.getAsBoolean()) {
+            double flipperSpeed = 0.8;
+            flipperSubsystem.setSpeed(flipperSpeed);
+        } else if (rightBumper != null && rightBumper.getAsBoolean()) {
+            double flipperSpeed = -0.8;
+            flipperSubsystem.setSpeed(flipperSpeed);
+        } else {
+            flipperSubsystem.setSpeed(0);
+        }           
     }
 
     @Override
