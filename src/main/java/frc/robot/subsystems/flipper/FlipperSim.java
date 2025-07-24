@@ -11,16 +11,16 @@ import edu.wpi.first.wpilibj.util.Color8Bit;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class FlipperSim extends SubsystemBase implements Flipper {
-    private double simulatedAngle = 90.0; // Initial position
+    private double simulatedAngle = 0.0; // Initial position
     private double speed = 0.0;
 
-    private static final double LOWER_ENDPOINT = 45.0;
-    private static final double UPPER_ENDPOINT = 135.0;
+    private static final double LOWER_ENDPOINT = 0.0;
+    private static final double UPPER_ENDPOINT = 100.0;
     private static final double STEP_PER_CYCLE = 0.5; // degrees per cycle
 
     private final LoggedMechanism2d flipper = new LoggedMechanism2d(3, 3);
-    private final LoggedMechanismRoot2d base = flipper.getRoot("base", 1.5, 0);
-    private final LoggedMechanismLigament2d arm = base.append(new LoggedMechanismLigament2d("Arm", 1, simulatedAngle, 6, new Color8Bit()));
+    private final LoggedMechanismRoot2d base = flipper.getRoot("base", 1.5, 0.2);
+    private final LoggedMechanismLigament2d arm = base.append(new LoggedMechanismLigament2d("Arm", 1, simulatedAngle, 3, new Color8Bit()));
 
     public FlipperSim() {
         Logger.recordOutput("FlipperMechanism", flipper);
