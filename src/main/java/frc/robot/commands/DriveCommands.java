@@ -18,10 +18,12 @@ public class DriveCommands {
   private static final double DEADBAND = 0.1;
   private static final double FF_RAMP_RATE = 0.1; // Volts/Sec
 
-  private DriveCommands() {}
+  private DriveCommands() {
+  }
 
   /**
-   * Standard joystick drive, where X is the forward-backward axis (positive = forward) and Z is the
+   * Standard joystick drive, where X is the forward-backward axis (positive =
+   * forward) and Z is the
    * left-right axis (positive = counter-clockwise).
    */
   public static Command arcadeDrive(
@@ -59,13 +61,13 @@ public class DriveCommands {
 
         // Accelerate and gather data
         Commands.run(
-                () -> {
-                  double voltage = timer.get() * FF_RAMP_RATE;
-                  drive.runOpenLoop(voltage, voltage);
-                  velocitySamples.add(drive.getCharacterizationVelocity());
-                  voltageSamples.add(voltage);
-                },
-                drive)
+            () -> {
+              double voltage = timer.get() * FF_RAMP_RATE;
+              drive.runOpenLoop(voltage, voltage);
+              velocitySamples.add(drive.getCharacterizationVelocity());
+              voltageSamples.add(voltage);
+            },
+            drive)
 
             // When cancelled, calculate and print results
             .finallyDo(

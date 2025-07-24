@@ -1,21 +1,31 @@
 package frc.robot.commands;
 
+import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.subsystems.FlipperSubsystem;
+import edu.wpi.first.wpilibj2.command.Subsystem;
+import frc.robot.subsystems.flipper.Flipper;
+import frc.robot.subsystems.flipper.FlipperSim;
+import frc.robot.subsystems.flipper.FlipperSubsystem;
 
 public class FlipperCommand extends Command {
-    private final FlipperSubsystem flipperSubsystem;
+    private FlipperSubsystem flipperSubsystem;
+    private FlipperSim flipperSim;
+    private Flipper flipper;
     private final BooleanSupplier leftBumper;
     private final BooleanSupplier rightBumper;
 
-    public FlipperCommand(FlipperSubsystem flipperSubsystem, BooleanSupplier leftBumper, BooleanSupplier rightBumper) {
-        this.flipperSubsystem = flipperSubsystem;
+    public FlipperCommand(Flipper flipper, BooleanSupplier leftBumper, BooleanSupplier rightBumper) {
+        this.flipper = flipper;
         this.leftBumper = leftBumper;
         this.rightBumper = rightBumper;
-        addRequirements(flipperSubsystem);
+        
+        if (flipper instanceof Subsystem) {
+            addRequirements((Subsystem) flipper);
+        }
+        
     }
 
     @Override
@@ -27,18 +37,18 @@ public class FlipperCommand extends Command {
     public void execute() {
         if (leftBumper != null && leftBumper.getAsBoolean()) {
             double flipperSpeed = 0.8;
-            flipperSubsystem.setSpeed(flipperSpeed);
+            flipper.setSpeed(flipperSpeed);
         } else if (rightBumper != null && rightBumper.getAsBoolean()) {
             double flipperSpeed = -0.8;
-            flipperSubsystem.setSpeed(flipperSpeed);
+            flipper.setSpeed(flipperSpeed);
         } else {
-            flipperSubsystem.setSpeed(0);
-        }           
+            flipper.setSpeed(0);
+        }
     }
 
     @Override
     public void end(boolean interrupted) {
-        flipperSubsystem.stop();
+        flipper.stop();
     }
 
     @Override

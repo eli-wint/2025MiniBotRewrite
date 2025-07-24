@@ -22,8 +22,8 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
-import frc.robot.Constants;
-import frc.robot.Constants.Mode;
+import frc.robot.subsystems.flipper.FlipperConstants;
+import frc.robot.subsystems.drive.DriveConstants.Mode;
 import frc.robot.util.LocalADStarAK;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
@@ -36,8 +36,8 @@ public class Drive extends SubsystemBase {
 
   private final DifferentialDriveKinematics kinematics = new DifferentialDriveKinematics(trackWidth);
   // PID Values for real and sim
-  private final double kS = Constants.currentMode == Mode.SIM ? simKs : realKs;
-  private final double kV = Constants.currentMode == Mode.SIM ? simKv : realKv;
+  private final double kS = DriveConstants.currentMode == Mode.SIM ? simKs : realKs;
+  private final double kV = DriveConstants.currentMode == Mode.SIM ? simKv : realKv;
   // Pose Values for 3D field
   private final DifferentialDrivePoseEstimator poseEstimator = new DifferentialDrivePoseEstimator(kinematics,
       new Rotation2d(), 0.0, 0.0, new Pose2d());

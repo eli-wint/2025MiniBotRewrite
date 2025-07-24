@@ -11,5 +11,6 @@ public interface GyroIO {
     public double yawVelocityRadPerSec = 0.0;
   }
 
-  public default void updateInputs(GyroIOInputs inputs) {}
+  public default void updateInputs(GyroIOInputs inputs) {
+  }
 }

@@ -11,9 +11,8 @@ import edu.wpi.first.wpilibj.simulation.DifferentialDrivetrainSim.KitbotWheelSiz
 
 public class DriveIOSim implements DriveIO {
 
-  private DifferentialDrivetrainSim sim =
-      DifferentialDrivetrainSim.createKitbotSim(
-          KitbotMotor.kDualCIMPerSide, KitbotGearing.k10p71, KitbotWheelSize.kSixInch, null);
+  private DifferentialDrivetrainSim sim = DifferentialDrivetrainSim.createKitbotSim(
+      KitbotMotor.kDualCIMPerSide, KitbotGearing.k10p71, KitbotWheelSize.kSixInch, null);
 
   private double leftAppliedVolts = 0.0;
   private double rightAppliedVolts = 0.0;
@@ -26,11 +25,9 @@ public class DriveIOSim implements DriveIO {
   @Override
   public void updateInputs(DriveIOInputs inputs) {
     if (closedLoop) {
-      leftAppliedVolts =
-          leftFFVolts + leftPID.calculate(sim.getLeftVelocityMetersPerSecond() / wheelRadiusMeters);
-      rightAppliedVolts =
-          rightFFVolts
-              + rightPID.calculate(sim.getRightVelocityMetersPerSecond() / wheelRadiusMeters);
+      leftAppliedVolts = leftFFVolts + leftPID.calculate(sim.getLeftVelocityMetersPerSecond() / wheelRadiusMeters);
+      rightAppliedVolts = rightFFVolts
+          + rightPID.calculate(sim.getRightVelocityMetersPerSecond() / wheelRadiusMeters);
     }
 
     // Update simulation state
@@ -42,12 +39,12 @@ public class DriveIOSim implements DriveIO {
     inputs.leftPositionRad = sim.getLeftPositionMeters() / wheelRadiusMeters;
     inputs.leftVelocityRadPerSec = sim.getLeftVelocityMetersPerSecond() / wheelRadiusMeters;
     inputs.leftAppliedVolts = leftAppliedVolts;
-    inputs.leftCurrentAmps = new double[] {sim.getLeftCurrentDrawAmps()};
+    inputs.leftCurrentAmps = new double[] { sim.getLeftCurrentDrawAmps() };
 
     inputs.rightPositionRad = sim.getRightPositionMeters() / wheelRadiusMeters;
     inputs.rightVelocityRadPerSec = sim.getRightVelocityMetersPerSecond() / wheelRadiusMeters;
     inputs.rightAppliedVolts = rightAppliedVolts;
-    inputs.rightCurrentAmps = new double[] {sim.getRightCurrentDrawAmps()};
+    inputs.rightCurrentAmps = new double[] { sim.getRightCurrentDrawAmps() };
   }
 
   @Override
