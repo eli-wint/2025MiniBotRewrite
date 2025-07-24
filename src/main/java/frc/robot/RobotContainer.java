@@ -21,26 +21,32 @@ import frc.robot.subsystems.drive.GyroIONavX;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 /**
- * This class is where the bulk of the robot should be declared. Since Command-based is a
- * "declarative" paradigm, very little robot logic should actually be handled in the {@link Robot}
- * periodic methods (other than the scheduler calls). Instead, the structure of the robot (including
+ * This class is where the bulk of the robot should be declared. Since
+ * Command-based is a
+ * "declarative" paradigm, very little robot logic should actually be handled in
+ * the {@link Robot}
+ * periodic methods (other than the scheduler calls). Instead, the structure of
+ * the robot (including
  * subsystems, commands, and button mappings) should be declared here.
  */
 public class RobotContainer {
-  private static FlipperSubsystem flipperSubsystem;
-  
-    // Subsystems
-    private final Drive drive;
-  
-    // Controller
-    private final XboxController controller = new XboxController(0);
-  
-    // Dashboard inputs
-    private final LoggedDashboardChooser<Command> autoChooser;
-  
-    private final FlipperCommand flipperJoystick = new FlipperCommand(flipperSubsystem, controller::getLeftBumperButton, controller::getRightBumperButton);
+  private final FlipperSubsystem flipperSubsystem = new FlipperSubsystem();
 
-  /** The container for the robot. Contains subsystems, OI devices, and commands. */
+  // Subsystems
+  private final Drive drive;
+
+  // Controller
+  private final XboxController controller = new XboxController(0);
+
+  // Dashboard inputs
+  private final LoggedDashboardChooser<Command> autoChooser;
+
+  private final FlipperCommand flipperJoystick = new FlipperCommand(flipperSubsystem, controller::getLeftBumperButton,
+      controller::getRightBumperButton);
+
+  /**
+   * The container for the robot. Contains subsystems, OI devices, and commands.
+   */
   public RobotContainer() {
     switch (Constants.currentMode) {
       case REAL:
@@ -50,12 +56,15 @@ public class RobotContainer {
 
       case SIM:
         // Sim robot, instantiate physics sim IO implementations
-        drive = new Drive(new DriveIOSim(), new GyroIO() {});
+        drive = new Drive(new DriveIOSim(), new GyroIO() {
+        });
         break;
 
       default:
         // Replayed robot, disable IO implementations
-        drive = new Drive(new DriveIO() {}, new GyroIO() {});
+        drive = new Drive(new DriveIO() {
+        }, new GyroIO() {
+        });
         break;
     }
 
@@ -81,9 +90,11 @@ public class RobotContainer {
   }
 
   /**
-   * Use this method to define your button->command mappings. Buttons can be created by
+   * Use this method to define your button->command mappings. Buttons can be
+   * created by
    * instantiating a {@link GenericHID} or one of its subclasses ({@link
-   * edu.wpi.first.wpilibj.Joystick} or {@link XboxController}), and then passing it to a {@link
+   * edu.wpi.first.wpilibj.Joystick} or {@link XboxController}), and then passing
+   * it to a {@link
    * edu.wpi.first.wpilibj2.command.button.JoystickButton}.
    */
   private void configureButtonBindings() {

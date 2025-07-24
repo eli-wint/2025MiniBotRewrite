@@ -13,10 +13,11 @@ import frc.robot.Constants;
 public class FlipperSubsystem extends SubsystemBase {
     private final SparkMax flipperMotor;
     private double speed;
+    private SparkMaxConfig flipperMotorConfig = new SparkMaxConfig();
+    private boolean hasInverted = false;
 
     public FlipperSubsystem() {
             flipperMotor = new SparkMax(Constants.IDs.FLIPPER_MOTOR, MotorType.kBrushless);
-            SparkMaxConfig flipperMotorConfig = new SparkMaxConfig();
             flipperMotorConfig
             .inverted(true)
             .idleMode(IdleMode.kBrake)
