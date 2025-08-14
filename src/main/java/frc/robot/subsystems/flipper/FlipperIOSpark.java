@@ -16,7 +16,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 // REWRITTEN
 
-public class FlipperSubsystem extends SubsystemBase implements Flipper{
+public class FlipperIOSpark implements FlipperIO{
     private final SparkMax flipperMotor;
     private double speed;
     private SparkMaxConfig flipperMotorConfig = new SparkMaxConfig();
@@ -25,7 +25,7 @@ public class FlipperSubsystem extends SubsystemBase implements Flipper{
     private MechanismLigament2d flipperLigament = base.append(new MechanismLigament2d("Flipper Arm", 2, 90));
     
 
-    public FlipperSubsystem() {
+    public FlipperIOSpark() {
         flipperMotor = new SparkMax(FlipperConstants.IDs.FLIPPER_MOTOR, MotorType.kBrushless);
         flipperMotorConfig
                 .inverted(true)
@@ -35,9 +35,11 @@ public class FlipperSubsystem extends SubsystemBase implements Flipper{
 
         SmartDashboard.putData("Flipper", flipper);
     }
-
+    
+    @Override
     public void setSpeed(double speed) {
         this.speed = speed;
+        flipperMotor.set(speed);
     }
 
     public void resetPivotEncoder() {
@@ -48,26 +50,27 @@ public class FlipperSubsystem extends SubsystemBase implements Flipper{
         flipperMotor.set(0);
     }
 
+    @Override
     public double getFlipperPosition() { // double
         return flipperMotor.getEncoder().getPosition();
     }
 
-    @Override
-    public void periodic() {
+    // @Override
+    // public void updateInputs() {
 
-        flipperLigament.setAngle(getFlipperPosition());
+    //     flipperLigament.setAngle(-10.5*getFlipperPosition());
 
-        // Checks if the "getFlipperPosition()" value has reached either the low
-        // endpoint, or upper endpoint and stops the motor
-        if ((getFlipperPosition() <= FlipperConstants.LOWER_ENDPOINT &&
-                speed < 0) || (getFlipperPosition() >= FlipperConstants.UPPER_ENDPOINT && speed > 0)) {
-            System.out.println("Flipper ENDPOINT reached!!!");
-            speed = 0;
-        }
+    //     // Checks if the "getFlipperPosition()" value has reached either the low
+    //     // endpoint, or upper endpoint and stops the motor
+    //     if ((getFlipperPosition() <= FlipperConstants.LOWER_ENDPOINT &&
+    //             speed < 0) || (getFlipperPosition() >= FlipperConstants.UPPER_ENDPOINT && speed > 0)) {
+    //         System.out.println("Flipper ENDPOINT reached!!!");
+    //         speed = 0;
+    //     }
 
-        SmartDashboard.putNumber("Flipper Encoder", getFlipperPosition());
+    //     SmartDashboard.putNumber("Flipper Encoder", getFlipperPosition());
 
-        flipperMotor.set(speed);
-    }
+    //     flipperMotor.set(speed);
+    // }
 
 }

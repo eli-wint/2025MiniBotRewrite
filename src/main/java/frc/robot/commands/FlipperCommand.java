@@ -1,31 +1,26 @@
 package frc.robot.commands;
 
-import java.util.Set;
 import java.util.function.BooleanSupplier;
-import java.util.function.DoubleSupplier;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
+import frc.robot.RobotContainer;
+import frc.robot.subsystems.drive.DriveConstants;
 import frc.robot.subsystems.flipper.Flipper;
-import frc.robot.subsystems.flipper.FlipperSim;
-import frc.robot.subsystems.flipper.FlipperSubsystem;
+import frc.robot.subsystems.flipper.FlipperIO;
 
 public class FlipperCommand extends Command {
-    private FlipperSubsystem flipperSubsystem;
-    private FlipperSim flipperSim;
-    private Flipper flipper;
+    private FlipperIO flipper;
     private final BooleanSupplier leftBumper;
     private final BooleanSupplier rightBumper;
 
-    public FlipperCommand(Flipper flipper, BooleanSupplier leftBumper, BooleanSupplier rightBumper) {
-        this.flipper = flipper;
+    public FlipperCommand(FlipperIO flipper2, BooleanSupplier leftBumper, BooleanSupplier rightBumper) {
+        this.flipper = flipper2;
         this.leftBumper = leftBumper;
         this.rightBumper = rightBumper;
-        
-        if (flipper instanceof Subsystem) {
-            addRequirements((Subsystem) flipper);
-        }
-        
+
+        addRequirements(RobotContainer.flipper);
+
     }
 
     @Override
@@ -36,10 +31,10 @@ public class FlipperCommand extends Command {
     @Override
     public void execute() {
         if (leftBumper != null && leftBumper.getAsBoolean()) {
-            double flipperSpeed = 0.8;
+            double flipperSpeed = 0.2;
             flipper.setSpeed(flipperSpeed);
         } else if (rightBumper != null && rightBumper.getAsBoolean()) {
-            double flipperSpeed = -0.8;
+            double flipperSpeed = -0.2;
             flipper.setSpeed(flipperSpeed);
         } else {
             flipper.setSpeed(0);

@@ -7,7 +7,7 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.RobotBase;
 
 public class DriveConstants {
-    public static final double maxSpeedMetersPerSec = 4.0;
+    public static final double maxSpeedMetersPerSec = 2.5; // 4.0
     public static final double trackWidth = Units.inchesToMeters(26.0);
 
     // Device CAN IDs
@@ -21,8 +21,8 @@ public class DriveConstants {
     public static final int currentLimit = 60;
     public static final double wheelRadiusMeters = Units.inchesToMeters(3.0);
     public static final double motorReduction = 10.71;
-    public static final boolean leftInverted = false;
-    public static final boolean rightInverted = true;
+    public static final boolean leftInverted = true; // false
+    public static final boolean rightInverted = false; // true
     public static final DCMotor gearbox = DCMotor.getCIM(2);
 
     // Velocity PID configuration
