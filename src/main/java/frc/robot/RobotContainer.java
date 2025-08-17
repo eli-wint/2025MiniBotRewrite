@@ -10,7 +10,7 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.DriveCommands;
 import frc.robot.commands.FlipperCommand;
-import frc.robot.subsystems.drive.Drive;
+import frc.robot.subsystems.drive.DriveSubsystem;
 import frc.robot.subsystems.drive.DriveConstants;
 import frc.robot.subsystems.drive.DriveIO;
 import frc.robot.subsystems.drive.DriveIOSim;
@@ -21,7 +21,7 @@ import frc.robot.subsystems.flipper.FlipperIO;
 import frc.robot.subsystems.flipper.FlipperConstants;
 import frc.robot.subsystems.flipper.FlipperIOSim;
 import frc.robot.subsystems.flipper.FlipperIOSpark;
-import frc.robot.subsystems.flipper.Flipper;
+import frc.robot.subsystems.flipper.FlipperSubsystem;
 
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
@@ -37,38 +37,35 @@ import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 public class RobotContainer {
 
   // Subsystems
-  public static Flipper flipper;
-    private static FlipperIO flipperIO;
-    private final Drive drive;
-  
-    // Controller
-    private final XboxController controller = new XboxController(0);
-  
-    // Dashboard inputs
-    private final LoggedDashboardChooser<Command> autoChooser;
-  
-    /**
-     * The container for the robot. Contains subsystems, OI devices, and commands.
-     */
-    public RobotContainer() {
-      switch (DriveConstants.currentMode) {
-        case REAL:
-          flipperIO = new FlipperIOSpark();
-          flipper = new Flipper(flipperIO); // hardware
-        drive = new Drive(new DriveIOSpark(), new GyroIONavX());
+  public static FlipperSubsystem flipperSubsystem;
+  private final DriveSubsystem drive;
+
+  // Controller
+  private final XboxController controller = new XboxController(0);
+
+  // Dashboard inputs
+  private final LoggedDashboardChooser<Command> autoChooser;
+
+  /**
+   * The container for the robot. Contains subsystems, OI devices, and commands.
+   */
+  public RobotContainer() {
+    switch (DriveConstants.currentMode) {
+      case REAL:
+        flipperSubsystem = new FlipperSubsystem(new FlipperIOSpark()); // hardware
+        drive = new DriveSubsystem(new DriveIOSpark(), new GyroIONavX());
         break;
 
       case SIM:
-        flipperIO = new FlipperIOSim();
-        flipper = new Flipper(flipperIO); // simulation
-        drive = new Drive(new DriveIOSim(), new GyroIO() {
+        flipperSubsystem = new FlipperSubsystem(new FlipperIOSim()); // simulation
+        drive = new DriveSubsystem(new DriveIOSim(), new GyroIO() {
         });
         break;
 
       default:
-        flipperIO = new FlipperIOSpark();
-        flipper = new Flipper(flipperIO); // fallback
-        drive = new Drive(new DriveIO() {
+        flipperSubsystem = new FlipperSubsystem(new FlipperIO() {
+        }); // fallback
+        drive = new DriveSubsystem(new DriveIO() {
         }, new GyroIO() {
         });
         break;
@@ -109,8 +106,8 @@ public class RobotContainer {
         DriveCommands.arcadeDrive(
             drive, () -> -controller.getLeftY(), () -> -controller.getRightX()));
 
-    if (flipper != null) {
-      flipper.setDefaultCommand(new FlipperCommand(flipperIO, controller::getLeftBumperButton,
+    if (flipperSubsystem != null) {
+      flipperSubsystem.setDefaultCommand(new FlipperCommand(flipperSubsystem, controller::getLeftBumperButton,
           controller::getRightBumperButton));
     }
 

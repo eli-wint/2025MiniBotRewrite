@@ -1,20 +1,29 @@
 // Copilot suggestion
 package frc.robot.subsystems.flipper;
 
-import org.littletonrobotics.junction.mechanism.LoggedMechanism2d;
-import org.littletonrobotics.junction.mechanism.LoggedMechanismLigament2d;
-import org.littletonrobotics.junction.mechanism.LoggedMechanismRoot2d;
+import org.littletonrobotics.junction.AutoLog;
 
 // Interface between SIM and REAL
 
 public interface FlipperIO {
 
-    void setSpeed(double newSpeed);
+    @AutoLog
+    public static class FlipperIOInputs {
+        public double position = 0.0;
+        public double velocity = 0.0;
+        public double appliedVolts = 0.0;
+        public double currentAmps = 0.0;
+        public double tempCelsius = 0.0;
+        public boolean isForwardLimit = false;
+        public boolean isReverseLimit = false;
+    }
 
-    void stop();
-    
-    // void updateInputs();
+    default void updateInputs(FlipperIOInputs inputs) {
+    }
 
-    double getFlipperPosition();
-    
+    default void setVelocity(double velocity) {
+    }
+
+    default void setPosition(double position) {
+    }
 }

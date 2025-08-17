@@ -7,7 +7,7 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import frc.robot.subsystems.drive.Drive;
+import frc.robot.subsystems.drive.DriveSubsystem;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.LinkedList;
@@ -27,7 +27,7 @@ public class DriveCommands {
    * left-right axis (positive = counter-clockwise).
    */
   public static Command arcadeDrive(
-      Drive drive, DoubleSupplier xSupplier, DoubleSupplier zSupplier) {
+      DriveSubsystem drive, DoubleSupplier xSupplier, DoubleSupplier zSupplier) {
     return Commands.run(
         () -> {
           // Apply deadband
@@ -45,7 +45,7 @@ public class DriveCommands {
   }
 
   /** Measures the velocity feedforward constants for the drive. */
-  public static Command feedforwardCharacterization(Drive drive) {
+  public static Command feedforwardCharacterization(DriveSubsystem drive) {
     List<Double> velocitySamples = new LinkedList<>();
     List<Double> voltageSamples = new LinkedList<>();
     Timer timer = new Timer();

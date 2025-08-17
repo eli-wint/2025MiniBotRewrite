@@ -1,114 +1,207 @@
-// package frc.robot.subsystems.drive;
+package frc.robot.subsystems.drive;
 
-// import com.revrobotics.spark.SparkLowLevel.MotorType;
-// import com.revrobotics.spark.SparkMax;
-// import com.revrobotics.spark.config.SparkMaxConfig;
-// import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
+import static edu.wpi.first.units.Units.*;
+import static frc.robot.subsystems.drive.DriveConstants.*;
 
-// import edu.wpi.first.math.controller.PIDController;
-// import edu.wpi.first.wpilibj2.command.SubsystemBase;
-// import frc.robot.Constants;
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.controllers.PPLTVController;
+import com.pathplanner.lib.pathfinding.Pathfinding;
+import com.pathplanner.lib.util.PathPlannerLogging;
+import edu.wpi.first.math.estimator.DifferentialDrivePoseEstimator;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Twist2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.kinematics.DifferentialDriveKinematics;
+import edu.wpi.first.math.kinematics.DifferentialDriveWheelSpeeds;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
+import edu.wpi.first.wpilibj.smartdashboard.MechanismRoot2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import frc.robot.subsystems.flipper.FlipperConstants;
+import frc.robot.subsystems.drive.DriveConstants.Mode;
+import frc.robot.util.LocalADStarAK;
+import org.littletonrobotics.junction.AutoLogOutput;
+import org.littletonrobotics.junction.Logger;
 
-// // ADDED COMMENTS (based on how I think the code is used for)
+// Logging and drive updates
 
-// public class DriveSubsystem extends SubsystemBase {
-//     // PID Values for the front wheels (tank)
-//     private static final double DRIVESTRAIGHT_PID_P = 0.8;
-//     private static final double DRIVESTRAIGHT_PID_I = 0.0;
-//     private static final double DRIVESTRAIGHT_PID_D = 0.06;
-//     // PID Values for the rear wheels (mecanum)
-//     public static final double DRIVEROTATE_PID_P = 0.0037;
-//     public static final double DRIVEROTATE_PID_I = 0.0;
-//     public static final double DRIVEROTATE_PID_D = 0.0;
-//     // Wheel rotation calculations?
-//     public static final double WHEEL_DIAMETER_METERS = 0.1524;
-//     public static final double ENCODER_POSITION_CONVERSION_FACTOR = 0.1 * WHEEL_DIAMETER_METERS * Math.PI;
-//     public static final double ENCODER_VELOCITY_CONVERSION_FACTOR = ENCODER_POSITION_CONVERSION_FACTOR * 60.0;
-//     public static final double ENCODER_TICKS_PER_ROTATION = 42; // TO-DO See if this is right
-//     // PID Controller for front drive wheels
-//     public final PIDController driveDistancePidController = new PIDController(
-//             DRIVESTRAIGHT_PID_P,
-//             DRIVESTRAIGHT_PID_I,
-//             DRIVESTRAIGHT_PID_D);
-//     // PID Controller for rear steering wheels
-//     public final PIDController driveRotatePidController = new PIDController(
-//             DRIVEROTATE_PID_P,
-//             DRIVEROTATE_PID_I,
-//             DRIVEROTATE_PID_D);
-//     // Motor initializations
-//     private final SparkMax leftLeadMotor = new SparkMax(Constants.IDs.DRIVE_LEFT_LEAD_MOTOR,
-//             MotorType.kBrushless);
-//     private final SparkMax rightLeadMotor = new SparkMax(Constants.IDs.DRIVE_RIGHT_LEAD_MOTOR,
-//             MotorType.kBrushless);
-//     private final SparkMax leftFollowMotor = new SparkMax(Constants.IDs.DRIVE_LEFT_FOLLOW_MOTOR,
-//             MotorType.kBrushless);
-//     private final SparkMax rightFollowMotor = new SparkMax(Constants.IDs.DRIVE_RIGHT_FOLLOW_MOTOR,
-//             MotorType.kBrushless);
+public class DriveSubsystem extends SubsystemBase {
+  private final DriveIO io;
+  private final DriveIOInputsAutoLogged inputs = new DriveIOInputsAutoLogged();
+  private final GyroIO gyroIO;
+  private final GyroIOInputsAutoLogged gyroInputs = new GyroIOInputsAutoLogged();
 
-//     public DriveSubsystem() {
-//         // All motor configurations
-//         SparkMaxConfig leftFollowMotorConfig = new SparkMaxConfig();
-//         leftFollowMotorConfig
-//         .follow(leftLeadMotor)
-//         .idleMode(IdleMode.kCoast).
-//         inverted(true); // false
-//         leftFollowMotor.configure(leftFollowMotorConfig, null, null);
+  private final DifferentialDriveKinematics kinematics = new DifferentialDriveKinematics(trackWidth);
+  // PID Values for real and sim
+  private final double kS = DriveConstants.currentMode == Mode.SIM ? simKs : realKs;
+  private final double kV = DriveConstants.currentMode == Mode.SIM ? simKv : realKv;
+  // Pose Values for 3D field
+  private final DifferentialDrivePoseEstimator poseEstimator = new DifferentialDrivePoseEstimator(kinematics,
+      new Rotation2d(), 0.0, 0.0, new Pose2d());
+  private final SysIdRoutine sysId;
+  private Rotation2d rawGyroRotation = new Rotation2d();
+  private double lastLeftPositionMeters = 0.0;
+  private double lastRightPositionMeters = 0.0;
 
-//         SparkMaxConfig rightFollowMotorConfig = new SparkMaxConfig();
-//         rightFollowMotorConfig
-//         .follow(rightLeadMotor)
-//         .idleMode(IdleMode.kCoast).
-//         inverted(true); // false
-//         rightFollowMotor.configure(rightFollowMotorConfig, null, null);
+  public DriveSubsystem(DriveIO io, GyroIO gyroIO) {
+    this.io = io;
+    this.gyroIO = gyroIO;
 
-//         SparkMaxConfig leftLeadMotorConfig = new SparkMaxConfig();
-//         leftLeadMotorConfig
-//         .idleMode(IdleMode.kCoast)
-//         .inverted(false); // true
-//         leftLeadMotor.configure(leftLeadMotorConfig, null, null);
+    // Configure AutoBuilder for PathPlanner
+    AutoBuilder.configure(
+        this::getPose,
+        this::setPose,
+        () -> kinematics.toChassisSpeeds(
+            new DifferentialDriveWheelSpeeds(
+                getLeftVelocityMetersPerSec(), getRightVelocityMetersPerSec())),
+        (ChassisSpeeds speeds) -> runClosedLoop(speeds),
+        new PPLTVController(0.02, maxSpeedMetersPerSec),
+        ppConfig,
+        () -> DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red,
+        this);
+    Pathfinding.setPathfinder(new LocalADStarAK());
+    PathPlannerLogging.setLogActivePathCallback(
+        (activePath) -> {
+          Logger.recordOutput(
+              "Odometry/Trajectory", activePath.toArray(new Pose2d[activePath.size()]));
+        });
+    PathPlannerLogging.setLogTargetPoseCallback(
+        (targetPose) -> {
+          Logger.recordOutput("Odometry/TrajectorySetpoint", targetPose);
+        });
 
-//         SparkMaxConfig rightLeadMotorConfig = new SparkMaxConfig();
-//         rightLeadMotorConfig
-//         .idleMode(IdleMode.kCoast)
-//         .inverted(false); // true
-//         rightLeadMotor.configure(rightLeadMotorConfig, null, null);
+    // Configure SysId
+    sysId = new SysIdRoutine(
+        new SysIdRoutine.Config(
+            null,
+            null,
+            null,
+            (state) -> Logger.recordOutput("Drive/SysIdState", state.toString())),
+        new SysIdRoutine.Mechanism(
+            (voltage) -> runOpenLoop(voltage.in(Volts), voltage.in(Volts)), null, this));
+  }
 
-//     }
+  @Override
+  public void periodic() {
+    io.updateInputs(inputs);
+    gyroIO.updateInputs(gyroInputs);
+    Logger.processInputs("Drive", inputs);
+    Logger.processInputs("Drive/Gyro", inputs);
 
-//     public void arcadeDrive(double forward, double rotate) {
-//         // If forward is 1 or -1, we want to slow down a bit so that we can still turn
-//         // (Slowing down forward wheels if we want the robot to turn?)
-//         if (forward + rotate > 1.0) {
-//             forward = forward - rotate;
-//         } else if (forward - rotate < -1.0) {
-//             forward = forward + rotate;
-//         }
+    // Update gyro angle
+    if (gyroInputs.connected) {
+      // Use the real gyro angle
+      rawGyroRotation = gyroInputs.yawPosition;
+    } else {
+      // Use the angle delta from the kinematics and module deltas
+      Twist2d twist = kinematics.toTwist2d(
+          getLeftPositionMeters() - lastLeftPositionMeters,
+          getRightPositionMeters() - lastRightPositionMeters);
+      rawGyroRotation = rawGyroRotation.plus(new Rotation2d(twist.dtheta));
+      lastLeftPositionMeters = getLeftPositionMeters();
+      lastRightPositionMeters = getRightPositionMeters();
+    }
 
-//         leftLeadMotor.set(forward + rotate);
-//         rightLeadMotor.set(forward - rotate);
-//     }
+    // Update odometry
+    poseEstimator.update(rawGyroRotation, getLeftPositionMeters(), getRightPositionMeters());
+  }
 
-//     public void autoDrive(double forward) {
-//         rightLeadMotor.set(forward);
-//         leftLeadMotor.set(forward);
-//     }
+  /** Runs the drive at the desired velocity. */
+  public void runClosedLoop(ChassisSpeeds speeds) {
+    var wheelSpeeds = kinematics.toWheelSpeeds(speeds);
+    runClosedLoop(wheelSpeeds.leftMetersPerSecond, wheelSpeeds.rightMetersPerSecond);
+  }
 
-//     public double getLeftEncoderPosition() {
-//         return leftLeadMotor.getEncoder().getPosition() / ENCODER_TICKS_PER_ROTATION
-//                 * ENCODER_POSITION_CONVERSION_FACTOR;
-//     }
+  /** Runs the drive at the desired left and right velocities. */
+  public void runClosedLoop(double leftMetersPerSec, double rightMetersPerSec) {
+    double leftRadPerSec = leftMetersPerSec / wheelRadiusMeters;
+    double rightRadPerSec = rightMetersPerSec / wheelRadiusMeters;
+    Logger.recordOutput("Drive/LeftSetpointRadPerSec", leftRadPerSec);
+    Logger.recordOutput("Drive/RightSetpointRadPerSec", rightRadPerSec);
 
-//     public double getRightEncoderPosition() {
-//         return rightLeadMotor.getEncoder().getPosition() / ENCODER_TICKS_PER_ROTATION
-//                 * ENCODER_POSITION_CONVERSION_FACTOR;
-//     }
+    double leftFFVolts = kS * Math.signum(leftRadPerSec) + kV * leftRadPerSec;
+    double rightFFVolts = kS * Math.signum(rightRadPerSec) + kV * rightRadPerSec;
+    io.setVelocity(leftRadPerSec, rightRadPerSec, leftFFVolts, rightFFVolts);
+  }
 
-//     public double getAverageEncoderPosition() {
-//         return (getLeftEncoderPosition() + getRightEncoderPosition()) / 2;
-//     }
+  /** Runs the drive in open loop. */
+  public void runOpenLoop(double leftVolts, double rightVolts) {
+    io.setVoltage(leftVolts, rightVolts);
+  }
 
-//     public void resetEncoders() {
-//         leftLeadMotor.getEncoder().setPosition(0);
-//         rightLeadMotor.getEncoder().setPosition(0);
-//     }
-// }
+  /** Stops the drive. */
+  public void stop() {
+    runOpenLoop(0.0, 0.0);
+  }
+
+  /** Returns a command to run a quasistatic test in the specified direction. */
+  public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
+    return sysId.quasistatic(direction);
+  }
+
+  /** Returns a command to run a dynamic test in the specified direction. */
+  public Command sysIdDynamic(SysIdRoutine.Direction direction) {
+    return sysId.dynamic(direction);
+  }
+
+  /** Returns the current odometry pose. */
+  @AutoLogOutput(key = "Odometry/Robot")
+  public Pose2d getPose() {
+    return poseEstimator.getEstimatedPosition();
+  }
+
+  /** Returns the current odometry rotation. */
+  public Rotation2d getRotation() {
+    return getPose().getRotation();
+  }
+
+  /** Resets the current odometry pose. */
+  public void setPose(Pose2d pose) {
+    poseEstimator.resetPosition(
+        rawGyroRotation, getLeftPositionMeters(), getRightPositionMeters(), pose);
+  }
+
+  /**
+   * Adds a vision measurement to the pose estimator.
+   *
+   * @param visionPose The pose of the robot as measured by the vision camera.
+   * @param timestamp  The timestamp of the vision measurement in seconds.
+   */
+  public void addVisionMeasurement(Pose2d visionPose, double timestamp) {
+    poseEstimator.addVisionMeasurement(visionPose, timestamp);
+  }
+
+  /** Returns the position of the left wheels in meters. */
+  @AutoLogOutput
+  public double getLeftPositionMeters() {
+    return inputs.leftPositionRad * wheelRadiusMeters;
+  }
+
+  /** Returns the position of the right wheels in meters. */
+  @AutoLogOutput
+  public double getRightPositionMeters() {
+    return inputs.rightPositionRad * wheelRadiusMeters;
+  }
+
+  /** Returns the velocity of the left wheels in meters/second. */
+  @AutoLogOutput
+  public double getLeftVelocityMetersPerSec() {
+    return inputs.leftVelocityRadPerSec * wheelRadiusMeters;
+  }
+
+  /** Returns the velocity of the right wheels in meters/second. */
+  @AutoLogOutput
+  public double getRightVelocityMetersPerSec() {
+    return inputs.rightVelocityRadPerSec * wheelRadiusMeters;
+  }
+
+  /** Returns the average velocity in radians/second. */
+  public double getCharacterizationVelocity() {
+    return (inputs.leftVelocityRadPerSec + inputs.rightVelocityRadPerSec) / 2.0;
+  }
+}
