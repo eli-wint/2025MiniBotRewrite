@@ -12,7 +12,7 @@ public final class FlipperConstants {
   // Flipper Constants
   public static final double UPPER_ENDPOINT = 1.0; // -7
   public static final double LOWER_ENDPOINT = -8.0; // -17
-  public static final double FLIPPER_PARKED = 1;
+  public static final double FLIPPER_PARKED = 1; 
   public static final double FLIPPER_TO_CLOSE = -10;
   public static final double FLIPPER_DOWN = -16.5;
   public static final double TOLERANCE = 0.5;
